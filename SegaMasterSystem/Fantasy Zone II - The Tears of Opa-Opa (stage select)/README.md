@@ -9,3 +9,5 @@
 - player should only face right (boss 1 & 2) in Wolfin
 - simplify hack
 - use games own routine to print strings?
+- compatible with all versions
+- weapon /health select feature?
