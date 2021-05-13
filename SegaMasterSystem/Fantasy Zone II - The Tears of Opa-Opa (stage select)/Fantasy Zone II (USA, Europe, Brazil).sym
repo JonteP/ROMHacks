@@ -1,0 +1,198 @@
+[labels]
+0000:c004 RAM_GAME_CONTROL_1; b7=freeze player, b6=dis pause, b5=demo, b3=leave shop(?), b2=shop, b1=boss, b0=warp
+0000:c005 RAM_GAME_CONTROL_2; b7=attract, b5=ending, b1=ending sequence, b0=next stage
+0000:c006 RAM_VDP_REGISTER_0
+0000:c007 RAM_DETECTED_REGION
+0000:c008 RAM_PUSHED_RESET
+0000:c012 RAM_ATTRACT_TIMER_LO
+0000:c013 RAM_ATTRACT_TIMER_HI
+0000:c014 RAM_DEMO_STAGE
+0000:c017 RAM_INGAME_FADE_TIME
+0000:c024 RAM_BASES_LEFT
+0000:c026 RAM_SET_MUSIC_INGAME
+0000:c030 RAM_HELD_BTNS
+0000:c031 RAM_PRESSED_BTNS
+0000:c037 RAM_LINE_CNT
+0000:c038 RAM_SET_AUTO_MOVEMENT ;1=diagonal right, 2=diagonal left, >2=left
+0000:c040 RAM_IRQ_FLAG
+0000:c041 RAM_DEMO_INPUTS
+0000:c045 RAM_GAME_PLAY_FLAG ;0=attract mode, 1=game play
+0000:c047 RAM_STORY_MODE_FLAG
+0000:c048 RAM_MEMORY_CONTROL_REG
+0000:c087 RAM_BASE_HEALTH_OFFSET
+0000:c0a0 RAM_CURRENT_STAGE1
+0000:c0a1 RAM_CURRENT_ZONE
+0000:c0a2 RAM_CURRENT_STAGE2
+0000:c0a3 RAM_CURRENT_LIVES
+0000:c0aa RAM_TOTAL_HEALTH
+0000:c0ab RAM_CURRENT_HEALTH
+0000:c0b1 RAM_SHOT_TIMER
+0000:c0b2 RAM_BOMB_TIMER
+0000:c0b8 RAM_MONEY_LOW
+0000:c0b6 RAM_CURRENT_SHOT
+0000:c0b7 RAM_CURRENT_BOMB
+0000:c0bc RAM_SCORE_LOW
+0000:c0c0 RAM_PALETTE1
+0000:c0d0 RAM_PALETTE2
+0000:c103 RAM_DRAW_STATUS_FLAG
+0000:c106 RAM_YPOSITION
+0000:c107 RAM_YSCROLL
+0000:c108 RAM_XPOSITION
+0000:c109 RAM_XSCROLL
+0000:c10a RAM_GAME_PAUSED
+0000:c10b RAM_SCROLL_UPDATE_FLAG
+0000:c10c RAM_BANK_BKP
+0000:c10f RAM_SCORE_UPDATE_FLAG
+0000:c125 RAM_LOCK_DIRECTION ;used on boss 1 and 2
+0000:c128 RAM_NEXT_ZONE
+0000:c12b RAM_UPDATE_WPN_FLAG
+0000:c12c RAM_UPDATE_LIVES_FLAG
+0000:c110 RAM_MONEY_UPDATE_FLAG
+0000:c1d1 RAM_TILEMAP_COL_FLAG
+0000:c1d2 RAM_TILEMAP_COL_VDP_ADDR
+0000:c1d4 RAM_TILEMAP_COL_SRC1
+0000:c1d6 RAM_TILEMAP_COL_SRC2
+0000:c1da RAM_MUSIC_INGAME
+0000:c1f0 RAM_DEMO_INPUT
+0000:c25e RAM_STAGE_INTRO_COUNTER
+0000:db00 OBJECT_RAM
+0000:de03 RAM_SET_SOUND
+0000:de06 RAM_SND_de06
+0000:de08 RAM_SND_de08
+0000:ffff MAPPER_SLOT2
+
+00:0000 ResetVector
+00:0008 DE2VDPAddress_InFrame
+00:0028 DE2VDPAddress_VBLANK
+00:0030 LoadBank
+00:0038 InterruptHandler
+00:0066 NMIVector
+00:007a MainLoop
+00:0109 AttractMode
+00:01be StageIntro
+00:023b FrameInterruptHandler
+00:0295 ;;Update sprite attribute table
+00:02e1 DetectRegion
+00:0305 DelayFunction; Region dependent - purpose?
+00:0312 DrawTilemapColumn
+00:034e AnimatePlayer
+00:0364 ;;64 OUTI
+00:036c ;;64 OUTI
+00:0374 ;;64 OUTI
+00:0377 AnimateBases
+00:03c4 UpdatePalette
+00:03db ;;17 OUTI
+00:0410 SetDefaultMapping
+00:04af DetectFMChip
+00:04b2 ;;IO disable
+00:04ce ;;disable FM
+00:0517 DisableDisplay
+00:0525 ClearTilemapOAMPalette
+00:0538 ClearOAMPalette
+00:0561 WriteVDPData
+00:056c FillVRAM
+00:0586 String2Tilemap
+00:0599 PrintStringFromTable
+00:05ad ReadInputs
+00:05b8 ;;Right button
+00:05bc ;;Left button
+00:05be ;;Down button
+00:05c2 ;;Up button
+00:05d9 ResetScroll
+00:05e2 SetScroll
+00:0606 IRQModeFadeOut
+00:0611 IRQModeFadeIn
+00:06b4 FadeOut
+00:07a4 Patterns2VRAM_1bpp
+00:07a9 Patterns2VRAM_2bpp
+00:07ae Patterns2VRAM_4bpp
+00:07c3 PatternPlane2VRAM
+00:0870 TitleScreen
+00:089f ;;disable pause
+00:0963 ;Title screen loop
+00:097a ;Started game (button 1/2)
+00:0988 ;;reset demo mode
+00:0990	;Attract timer expired
+00:09c7 TitleScreenStringTable
+00:09d3 TopString
+00:09d8 PushStartButtonString
+00:09eb CopyrightString
+00:0c21 ObjectHandler
+00:101b PlayDemo
+00:1549 ;;Skip if not demo
+00:1ceb ;;check if demo mode
+00:1ced ;;initial lives
+00:1cef ;;skip if game start
+00:1d02 ;;skip if game start
+00:1d17 ;;skip if story mode
+00:1d60 ;Loads base stats and...?
+00:1e82 BaseHealthTable
+00:1e89 StageMusicTable
+00:1e95 ;;Skip if shop or boss
+00:1f54 ;;Set top status bar
+00:216f ;;Skip if boss
+00:217e ;;Jump if in shop
+00:227f LoadStageFromShop
+00:22f6 StatusBarStringTable
+00:232d DrawStatusBar
+00:24d4 UpdateLifeMeter
+00:24dc ;;life meter tilemap offset
+00:24e4 ;;jump if demo mode
+00:250b UpdateStatus
+00:2519 ;;Score VRAM offset
+00:2523 UpdateStatus@UpdateMoney
+00:252c ;;Money VRAM offset
+00:2539 UpdateStatus@UpdateWeapon
+00:2557 UpdateStatus@ShotHasNoTimer
+00:2549 ;;Shot timer tilemap offset
+00:2565 ;;Shot tilemap offset
+00:2573 ;;Bomb timer tilemap offset
+00:2581 UpdateStatus@BombHasNoTimer
+00:258f ;;Bomb tilemap offset
+00:2596 UpdateStatus@UpdatePower
+00:259e ;;Power meter tilemap offset
+00:25a2 ;;Power meter start tile
+00:25b8 ;;Power meter filled tile
+00:25c9 ;;Power meter partly filled tile
+00:25d7 ;;Power meter empty tile
+00:25e1 ;;Power meter end tile
+00:25eb ;Modify half empty power meter tile:
+00:260d Score2Tilemap
+00:2610 Num2Tilemap
+00:26c2 ShotStringTable
+00:26d0 BombStringTable
+00:26de ShotString
+00:26e8 BigString
+00:26f2 WideString
+00:26fa LaserString
+00:2702 ThreeWayString
+00:270a SevenWayString
+00:2712 FireString
+00:271a BombString
+00:2724 TwinString
+00:272e TwinBigString
+00:2738 SmartString
+00:2740 HeavyString
+00:2748 RdString
+00:274e PowerMeterPartFilledTileTable
+01:451b WarpBetweenZones
+01:49f9 LoadShop
+01:4b94 LeavingShop
+01:54b3 LoadBoss
+01:7927 LoadNextStage
+01:7ae4 EndingMode
+01:7edd IntroMode
+01:7f1a RollStory
+01:7fb1 LoadStoryGraphics
+01:7fc9 IntroGraphics
+02:8000 PlayerTileData;??
+02:9200 
+06:abdc WeaponSelectStringTable
+06:abec PartsSelectString
+06:abfa SpeedUpString
+06:ac04 Weapon1String
+06:ac0e Weapon2String
+07:817f SoundHandler
+07:8c30 ResetMusic
+07:8c73 MuteChannelsTable
+07:b87b IntroTilemap
