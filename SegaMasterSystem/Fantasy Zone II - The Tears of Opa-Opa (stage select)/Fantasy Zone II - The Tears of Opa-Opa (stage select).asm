@@ -20,9 +20,9 @@ DEFAULTSLOT 2
 .ENDME
 
 .ROMBANKMAP
-BANKSTOTAL 18
+BANKSTOTAL 17
 BANKSIZE $4000
-BANKS 18
+BANKS 17
 .ENDRO
 
 .COMPUTESMSCHECKSUM
@@ -67,7 +67,7 @@ BANKS 18
 .DEFINE _LABEL_7969_        $7969
 
 ;constants:
-.DEFINE EXTRA_BANK          $11
+.DEFINE EXTRA_BANK          $10
 .DEFINE TITLE_ROWS          $01
 .DEFINE LIST_ROWS           $08
 .DEFINE LIST_SPACING        $80 ;double spacing
@@ -137,7 +137,7 @@ BANKS 18
 
 ;===========================================================
 
-.BANK 17
+.BANK 16
 .org 0
 _STAGE_SELECT_HACK: 
 
