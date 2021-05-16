@@ -69,6 +69,8 @@
 00:0066 NMIVector
 00:007a MainLoop
 00:0109 AttractMode
+00:013c ;;check if demo mode
+00:0140 ;;enable pause
 00:01be StageIntro
 00:023b FrameInterruptHandler
 00:0295 ;;Update sprite attribute table
@@ -120,6 +122,7 @@
 00:0c21 ObjectHandler
 00:101b PlayDemo
 00:1549 ;;Skip if not demo
+00:1ce5 StartNewGameOrDemo
 00:1ceb ;;check if demo mode
 00:1ced ;;initial lives
 00:1cef ;;skip if game start

@@ -93,8 +93,13 @@ BANKS 17
 
 .BANK 0 SLOT 0
 
+;suggestion:
+;-jump at $12d to hack subroutine
+;-add call $1d60 at start of hack
+;-end hack with jump to $130
+
 ;first instruction after game start
-.org $97a
+/*.org $97a
     call _FADE_OUT
     call _LABEL_1CE5_       ;set lives and power...
     call _LABEL_213E_
@@ -105,7 +110,14 @@ BANKS 17
     nop
     nop
     nop
-    ret
+    ret*/
+    
+.org $11f
+    call $1ce5
+    ld a, EXTRA_BANK
+    rst $30
+    call _TEST_LABEL
+    
 
 ;bank 7 -> slot 2
     ;ld a, $07
@@ -171,7 +183,20 @@ _STAGE_SELECT_BETWEEN_STAGES:       ;called between stages
         
     rst _WAIT_FOR_IRQ
     call _RESET_MUSIC
-
+    
+_TEST_LABEL:
+    ld a, ($c014)
+    ld b, a
+    ld a, ($c045)
+    or b
+    jp nz, +
+    pop hl
+    jp $7edd
++:
+    ld a, ($c004)
+    bit 5, a
+    jp nz, _RETURN
+    
 ;disable display:
     ld a, $30
     out (Port_VDPAddress), a
@@ -231,7 +256,9 @@ _STAGE_SELECT_BETWEEN_STAGES:       ;called between stages
     cp LAST_STAGE
     jp nc, _LABEL_7969_
     call _FADE_OUT
-    jp _LABEL_12D_
+
+_RETURN:
+    jp $12d
     
 _CLEAR_TILEMAP:
     ld a, _TILEMAP_START & $00ff
