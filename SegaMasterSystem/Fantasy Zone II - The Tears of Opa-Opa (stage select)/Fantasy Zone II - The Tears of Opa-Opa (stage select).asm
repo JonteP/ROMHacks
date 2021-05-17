@@ -1,8 +1,6 @@
 ;todo
 ;
-;corrupt graphics (bombs) in Wolfin
-;player should only face right (boss behavior) in Wolfin?
-;simplify hack
+;player should only face right (boss behavior) in Wolfin? - needs confirmation
 ;use games own routine to print strings?
 
 ;notes
@@ -31,20 +29,20 @@ BANKS 17
 
 ;variables:
 .DEFINE _RAM_GAME_CONTROL_1 $c004
+.DEFINE _RAM_DEMO_STAGE     $c014
 .DEFINE _RAM_HELD_BTNS      $c030
 .DEFINE _RAM_PRESSED_BTNS   $c031
 .DEFINE _RAM_GAME_PLAY_FLAG $c045
-.DEFINE _RAM_CURRENT_STAGE  $c0a0
+.DEFINE _RAM_CURRENT_STAGE1 $c0a0
 .DEFINE _RAM_CURRENT_ZONE   $c0a1
-.DEFINE _RAM_GFX_STAGE      $c0a2 ;wolfin related
+.DEFINE _RAM_CURRENT_STAGE2 $c0a2
 .DEFINE _RAM_PALETTE1       $c0c0
 .DEFINE _RAM_PALETTE2       $c0d0
-.DEFINE _RAM_XSCROLL        $c109
 .DEFINE _RAM_GAME_PAUSED    $c10a
+.DEFINE _RAM_LOCK_DIRECTION $c125
 .DEFINE _MAPPER_SLOT2       $ffff
 
 .DEFINE _RAM_C010_          $c010
-.DEFINE _RAM_DE06_          $de06 ;sound related
 
 
 ;memory offsets:
@@ -62,9 +60,10 @@ BANKS 17
 .DEFINE _LABEL_12D_         $012d
 .DEFINE _LABEL_614_         $0614
 .DEFINE _FADE_OUT           $0606
-.DEFINE _LABEL_1CE5_        $1ce5
+.DEFINE _START_GAME_OR_DEMO $1ce5
 .DEFINE _LABEL_213E_        $213e
 .DEFINE _LABEL_7969_        $7969
+.DEFINE _INTRO_MODE         $7edd
 
 ;constants:
 .DEFINE EXTRA_BANK          $10
@@ -92,17 +91,35 @@ BANKS 17
 ;===========================================================
 
 .BANK 0 SLOT 0
+    
+;Intercept code in main loop right after return from Title Screen subroutine:
 
-;suggestion:
-;-jump at $12d to hack subroutine
-;-add call $1d60 at start of hack
-;-end hack with jump to $130
+.org $011f
 
-;first instruction after game start
-/*.org $97a
-    call _FADE_OUT
-    call _LABEL_1CE5_       ;set lives and power...
-    call _LABEL_213E_
+;This part is moved to _STAGE_SELECT_HACK:
+    ;ld a, (_RAM_DEMO_STAGE)
+    ;ld b, a
+    ;ld a, (_RAM_GAME_PLAY_FLAG)
+    ;or b
+    ;jp z, _INTRO_MODE
+    
+    call _START_GAME_OR_DEMO ;call this before select screen
+    call $213e  ;make sure correct graphics are loaded for wolfin
+    ld a, EXTRA_BANK
+    rst $30
+    call _STAGE_SELECT_HACK
+    nop
+    nop
+
+;Jumps back here after stage select:
+    ;call $1d60
+        
+;===========================================================
+/*
+; Insert stage select between stages:
+.BANK 1 SLOT 1
+
+.org $395c
     ld a, EXTRA_BANK
     ld (_MAPPER_SLOT2), a
     call _STAGE_SELECT_HACK
@@ -110,92 +127,25 @@ BANKS 17
     nop
     nop
     nop
-    ret*/
-    
-.org $11f
-    call $1ce5
-    ld a, EXTRA_BANK
-    rst $30
-    call _TEST_LABEL
-    
-
-;bank 7 -> slot 2
-    ;ld a, $07
-    ;rst $30
-    
-    ;call _LABEL_1CC30_     ;reset music
-    ;ld a, $01
-    ;ld (_RAM_GAME_PLAY_FLAG), a
-    ;ld hl, _RAM_GAME_CONTROL_1
-    ;ld (hl), $40
-    ;inc l
-    ;res 7, (hl)
-    ;jp _FADE_OUT
-        
-;===========================================================
-
-; Insert stage select between stages:
-.BANK 1 SLOT 1
-
-.org $395c
-    ld a, EXTRA_BANK
-    ld (_MAPPER_SLOT2), a
-    call _STAGE_SELECT_BETWEEN_STAGES
     nop
-    nop
-    nop
-    nop
-    nop
-
+*/
 ;===========================================================
 
 .BANK 16
 .org 0
-_STAGE_SELECT_HACK: 
-
-;move original code:
-    ld a, $01
-    ld (_RAM_GAME_PLAY_FLAG), a
-    ld hl, _RAM_GAME_CONTROL_1
-    ld (hl), $40    ;disable pause (during stage intro)
-    inc l
-    res 7, (hl)     ;disable attract mode
-    jr +
     
-_STAGE_SELECT_BETWEEN_STAGES:       ;called between stages
-    call _FADE_OUT
-    
-+:  ;move this label to "xor a" instead?
-    ld a, (_RAM_GAME_CONTROL_1)     
-    or $40
-    ld (_RAM_GAME_CONTROL_1), a
-        
-    xor a
-    ld (_RAM_C010_), a
-    ld (_RAM_HELD_BTNS), a
-    ld (_RAM_PRESSED_BTNS), a
-    ld (_RAM_CURRENT_ZONE), a
-    ld (_RAM_GAME_PAUSED), a
-    ld (_RAM_XSCROLL), a
-        
-    ld a, END_SPRITE_LIST           
-    ld (_OBJECT_RAM), a
-        
-    rst _WAIT_FOR_IRQ
-    call _RESET_MUSIC
-    
-_TEST_LABEL:
-    ld a, ($c014)
+_STAGE_SELECT_HACK:
+    ld a, (_RAM_DEMO_STAGE)
     ld b, a
-    ld a, ($c045)
+    ld a, (_RAM_GAME_PLAY_FLAG)
     or b
     jp nz, +
     pop hl
-    jp $7edd
+    jp _INTRO_MODE
 +:
-    ld a, ($c004)
-    bit 5, a
-    jp nz, _RETURN
+    ld a, (_RAM_GAME_CONTROL_1)
+    bit 5, a    ;check if demo mode
+    jp nz, _RETURN_FROM_HACK
     
 ;disable display:
     ld a, $30
@@ -228,10 +178,10 @@ _TEST_LABEL:
     ld a, (_RAM_PRESSED_BTNS)
     ld b, a
     and $30     ;button 1/2
-    jp nz, +++
+    jp nz, _RETURN_FROM_HACK
     bit 0, b    ;button up
     jr z, +
-    ld a, (_RAM_CURRENT_STAGE)
+    ld a, (_RAM_CURRENT_STAGE1)
     ld b, a
     dec a
     cp FIRST_STAGE - 1
@@ -241,24 +191,19 @@ _TEST_LABEL:
 +:  
     bit 1, b
     jr z, -
-    ld a, (_RAM_CURRENT_STAGE)
+    ld a, (_RAM_CURRENT_STAGE1)
     ld b, a
     inc a
     cp LAST_STAGE + 1
     jr c, ++
     ld a, FIRST_STAGE
-    ++: 
-    ld (_RAM_GFX_STAGE), a
-    ld (_RAM_CURRENT_STAGE), a
+++: 
+    ld (_RAM_CURRENT_STAGE1), a
+    ld (_RAM_CURRENT_STAGE2), a
     jr -
-+++:    
-    ld a, (_RAM_GFX_STAGE)
-    cp LAST_STAGE
-    jp nc, _LABEL_7969_
-    call _FADE_OUT
 
-_RETURN:
-    jp $12d
+_RETURN_FROM_HACK:
+    jp $795c
     
 _CLEAR_TILEMAP:
     ld a, _TILEMAP_START & $00ff
@@ -358,7 +303,7 @@ _DRAW_POINTER:
     call ++
     ld de, $0000
     call +
-    ld a, (_RAM_CURRENT_STAGE)
+    ld a, (_RAM_CURRENT_STAGE1)
     ld b, a
     call ++
     ld de, POINTER_TILE << 8
@@ -384,53 +329,3 @@ _DRAW_POINTER:
     add hl, de
     jr -
     ret     ;never reached?
-    
-;===========================================================
-
-_RESET_MUSIC:   ;matches 1cc30
-    push hl
-    push de
-    push bc
-    ld hl, _RAM_DE06_
-    ld de, _RAM_DE06_ + 1
-    ld bc, $0123
-    ld (hl), $00
-    ldir
-    pop bc
-    pop de
-    pop hl
-    push hl
-    push bc
-    ld hl, _DATA_441ED_
-    ld c, Port_PSG
-    ld b, $04
-    otir
-    xor a
-    pop bc
-    pop hl
-    push bc
-    push de
-    ld b, $06
-    xor a
-    ld c, Port_FMAddress
-    ld d, $20
--:  
-    out (c), d
-    inc d
-    call +
-    out (Port_FMData), a
-    call +
-    djnz -
-    pop de
-    pop bc
-    ret
-    
-; sound related data
-_DATA_441ED_:   
-    .db $9F $BF $DF $FF
-    
-+:  ;matches $1cd73
-    push hl
-    pop hl
-    ret
-    
