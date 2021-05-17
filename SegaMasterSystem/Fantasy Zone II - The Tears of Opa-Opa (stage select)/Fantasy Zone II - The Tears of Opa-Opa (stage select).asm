@@ -38,6 +38,7 @@ BANKS 17
 .DEFINE _RAM_CURRENT_STAGE2 $c0a2
 .DEFINE _RAM_PALETTE1       $c0c0
 .DEFINE _RAM_PALETTE2       $c0d0
+.DEFINE _RAM_XSCROLL        $c109
 .DEFINE _RAM_GAME_PAUSED    $c10a
 .DEFINE _RAM_LOCK_DIRECTION $c125
 .DEFINE _MAPPER_SLOT2       $ffff
@@ -110,31 +111,47 @@ BANKS 17
     call _STAGE_SELECT_HACK
     nop
     nop
-
-;Jumps back here after stage select:
-    ;call $1d60
         
+    ;the STAGE_SELECT_HACK then jumps into the subroutine for loading 
+    ;next stage at $795c which in turn jumps back into the main loop at $12d.
+    
 ;===========================================================
-/*
+
 ; Insert stage select between stages:
 .BANK 1 SLOT 1
 
-.org $395c
+.org $3953
     ld a, EXTRA_BANK
     ld (_MAPPER_SLOT2), a
-    call _STAGE_SELECT_HACK
+    call _STAGE_SELECT_HACK_BETWEEN_STAGES
     nop
-    nop
-    nop
-    nop
-    nop
-*/
+    
 ;===========================================================
 
 .BANK 16
 .org 0
+
+_STAGE_SELECT_HACK_BETWEEN_STAGES:
+;moved original code here (causes a 45 frames delay before loading next stage):
+    ld hl, $002d ;45 frames
+-:
+    rst $18 ;wait for VBLANK
+    dec hl
+    ld a, l
+    or h
+    jr nz, -
+    
+    xor a
+    ld (_RAM_XSCROLL), a    ;correct offset for select screen
+
+;clear sprites:
+    ld a, END_SPRITE_LIST   
+    ld (_OBJECT_RAM), a
+    
+    jp ++
     
 _STAGE_SELECT_HACK:
+;moved original code here (calls intro story routine):
     ld a, (_RAM_DEMO_STAGE)
     ld b, a
     ld a, (_RAM_GAME_PLAY_FLAG)
@@ -142,17 +159,22 @@ _STAGE_SELECT_HACK:
     jp nz, +
     pop hl
     jp _INTRO_MODE
+    
 +:
+
+;added a check for demo mode to avoid stage select then:
     ld a, (_RAM_GAME_CONTROL_1)
     bit 5, a    ;check if demo mode
     jp nz, _RETURN_FROM_HACK
     
+++:
+
 ;disable display:
     ld a, $30
     out (Port_VDPAddress), a
     ld a, VDP_WRITE_REG | $01
     out (Port_VDPAddress), a
-        
+    
     call _CLEAR_TILEMAP
         
 ;draw title:        
@@ -166,7 +188,6 @@ _STAGE_SELECT_HACK:
     ld de, _STAGE_LIST_OFFSET
     ld bc, (LIST_ROWS << 8) | LIST_SPACING
     call _DRAW_STRINGS
-    
     
     call _LABEL_614_
     call _SET_PALETTE
