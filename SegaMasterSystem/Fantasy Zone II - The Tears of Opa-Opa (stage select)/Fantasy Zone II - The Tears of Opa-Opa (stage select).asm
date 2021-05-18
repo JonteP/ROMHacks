@@ -1,13 +1,3 @@
-;todo
-;
-;player should only face right (boss behavior) in Wolfin? - needs confirmation
-;use games own routine to print strings?
-
-;notes
-;
-;writing $01 to $c005 loads next stage
-;writing $02 to $c004 loads boss
- 
 ;==Sega mapper==
 .MEMORYMAP
 SLOTSIZE $4000
@@ -59,6 +49,7 @@ BANKS 17
 ;functions:
 .DEFINE _WAIT_FOR_IRQ       $0018
 .DEFINE _LABEL_12D_         $012d
+.DEFINE _PRINT_STR_FROM_TBL $0599
 .DEFINE _LABEL_614_         $0614
 .DEFINE _FADE_OUT           $0606
 .DEFINE _START_GAME_OR_DEMO $1ce5
@@ -81,6 +72,7 @@ BANKS 17
 .DEFINE POINTER_TILE        $20
 .DEFINE FIRST_STAGE         $00
 .DEFINE LAST_STAGE          $07
+.DEFINE TABLE_LENGTH        $09
 
 ;registers:
 .DEFINE Port_VDPData        $be
@@ -112,8 +104,8 @@ BANKS 17
     nop
     nop
         
-    ;the STAGE_SELECT_HACK then jumps into the subroutine for loading 
-    ;next stage at $795c which in turn jumps back into the main loop at $12d.
+;the STAGE_SELECT_HACK then jumps into the subroutine for loading 
+;next stage at $795c which in turn jumps back into the main loop at $12d.
     
 ;===========================================================
 
@@ -177,18 +169,10 @@ _STAGE_SELECT_HACK:
     
     call _CLEAR_TILEMAP
         
-;draw title:        
-    ld hl, _DATA_SELECT_ROUND
-    ld de, _TITLE_OFFSET
-    ld bc, TITLE_ROWS << 8
-    call _DRAW_STRINGS
-        
-;draw list of stages:
-    ld hl, _DATA_STAGES
-    ld de, _STAGE_LIST_OFFSET
-    ld bc, (LIST_ROWS << 8) | LIST_SPACING
-    call _DRAW_STRINGS
-    
+;print strings:        
+    ld hl, _TABLE_STAGE_SELECT
+    ld b, TABLE_LENGTH
+    call _PRINT_STR_FROM_TBL
     call _LABEL_614_
     call _SET_PALETTE
     xor a
@@ -270,48 +254,40 @@ _SET_PALETTE:
     ret
 
 ;===========================================================        
-            
-_DRAW_STRINGS:  
-    ld a, e
-    out (Port_VDPAddress), a
-    ld a, d
-    or VDP_WRITE_VRAM
-    out (Port_VDPAddress), a
--:  
-    ld a, (hl)
-    inc hl
-    cp END_OF_STRING
-    jp z, +
-    out (Port_VDPData), a
-    ld a, $00
-    out (Port_VDPData), a
-    jr -
-+:  
-    ld a, e
-    add a, c
-    ld e, a
-    ld a, d
-    adc a, $00
-    ld d, a
-    ld a, b
-    dec a
-    ld b, a
-    cp $00
-    jr nz, _DRAW_STRINGS
-    ret
+                
+_TABLE_STAGE_SELECT:
+;       Source:               Destination:
+    .dw _STRING_SELECT_ROUND  ((VDP_WRITE_VRAM << 8) | _TITLE_OFFSET)
+    .dw _STRING_PASTARIA      ((VDP_WRITE_VRAM << 8) | _STAGE_LIST_OFFSET)
+    .dw _STRING_SARCAND       ((VDP_WRITE_VRAM << 8) | _STAGE_LIST_OFFSET) + (LIST_SPACING  * 1)
+    .dw _STRING_HIYARIKA      ((VDP_WRITE_VRAM << 8) | _STAGE_LIST_OFFSET) + (LIST_SPACING  * 2)
+    .dw _STRING_BOWBOW        ((VDP_WRITE_VRAM << 8) | _STAGE_LIST_OFFSET) + (LIST_SPACING  * 3)
+    .dw _STRING_CHAPRUN       ((VDP_WRITE_VRAM << 8) | _STAGE_LIST_OFFSET) + (LIST_SPACING  * 4)
+    .dw _STRING_FUWAREAK      ((VDP_WRITE_VRAM << 8) | _STAGE_LIST_OFFSET) + (LIST_SPACING  * 5)
+    .dw _STRING_SBARDIAN      ((VDP_WRITE_VRAM << 8) | _STAGE_LIST_OFFSET) + (LIST_SPACING  * 6)
+    .dw _STRING_WOLFIN        ((VDP_WRITE_VRAM << 8) | _STAGE_LIST_OFFSET) + (LIST_SPACING  * 7)
 
-_DATA_SELECT_ROUND: 
-    .db $33 $25 $2C $25 $23 $34 $00 $32 $2F $35 $2E $24 $FF
-    
-_DATA_STAGES:   
-    .db $11 $0E $00 $30 $21 $33 $34 $21 $32 $29 $21 $FF 
-    .db $12 $0E $00 $33 $21 $32 $23 $21 $2E $24 $FF 
-    .db $13 $0E $00 $28 $29 $39 $21 $32 $29 $2B $21 $FF 
-    .db $14 $0E $00 $22 $2F $37 $00 $22 $2F $37 $FF 
-    .db $15 $0E $00 $23 $28 $21 $30 $32 $35 $2E $FF 
-    .db $16 $0E $00 $26 $35 $37 $21 $32 $25 $21 $2B $FF 
-    .db $17 $0E $00 $33 $22 $21 $32 $24 $29 $21 $2E $FF 
-    .db $18 $0E $00 $37 $2F $2C $26 $29 $2E $FF
+
+;byte1=tile attributes, byte2=string length:
+
+_STRING_SELECT_ROUND: 
+    .db $00 $0c $33 $25 $2C $25 $23 $34 $00 $32 $2F $35 $2E $24
+_STRING_PASTARIA:
+    .db $00 $0b $11 $0E $00 $30 $21 $33 $34 $21 $32 $29 $21
+_STRING_SARCAND:
+    .db $00 $0a $12 $0E $00 $33 $21 $32 $23 $21 $2E $24
+_STRING_HIYARIKA:
+    .db $00 $0b $13 $0E $00 $28 $29 $39 $21 $32 $29 $2B $21
+_STRING_BOWBOW:
+    .db $00 $0a $14 $0E $00 $22 $2F $37 $00 $22 $2F $37
+_STRING_CHAPRUN:
+    .db $00 $0a $15 $0E $00 $23 $28 $21 $30 $32 $35 $2E
+_STRING_FUWAREAK:
+    .db $00 $0b $16 $0E $00 $26 $35 $37 $21 $32 $25 $21 $2B
+_STRING_SBARDIAN:
+    .db $00 $0b $17 $0E $00 $33 $22 $21 $32 $24 $29 $21 $2E
+_STRING_WOLFIN:
+    .db $00 $09 $18 $0E $00 $37 $2F $2C $26 $29 $2E
     
 ;===========================================================
 
