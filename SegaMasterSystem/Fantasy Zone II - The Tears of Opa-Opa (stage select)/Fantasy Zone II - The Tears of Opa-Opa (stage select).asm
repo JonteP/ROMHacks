@@ -19,6 +19,7 @@ BANKS 17
 
 ;variables:
 .DEFINE _RAM_GAME_CONTROL_1 $c004
+.DEFINE _RAM_INTERRUPT_MODE $c010
 .DEFINE _RAM_DEMO_STAGE     $c014
 .DEFINE _RAM_HELD_BTNS      $c030
 .DEFINE _RAM_PRESSED_BTNS   $c031
@@ -33,9 +34,6 @@ BANKS 17
 .DEFINE _RAM_LOCK_DIRECTION $c125
 .DEFINE _MAPPER_SLOT2       $ffff
 
-.DEFINE _RAM_C010_          $c010
-
-
 ;memory offsets:
 
 ;RAM
@@ -48,23 +46,18 @@ BANKS 17
 
 ;functions:
 .DEFINE _WAIT_FOR_IRQ       $0018
-.DEFINE _LABEL_12D_         $012d
 .DEFINE _PRINT_STR_FROM_TBL $0599
-.DEFINE _LABEL_614_         $0614
 .DEFINE _FADE_OUT           $0606
+.DEFINE _FADE_IN            $0614
 .DEFINE _START_GAME_OR_DEMO $1ce5
 .DEFINE _LABEL_213E_        $213e
-.DEFINE _LABEL_7969_        $7969
 .DEFINE _INTRO_MODE         $7edd
 
 ;constants:
 .DEFINE EXTRA_BANK          $10
-.DEFINE TITLE_ROWS          $01
-.DEFINE LIST_ROWS           $08
 .DEFINE LIST_SPACING        $80 ;double spacing
 .DEFINE PALETTE_SIZE        $0f
 .DEFINE END_SPRITE_LIST     $d0
-.DEFINE END_OF_STRING       $ff
 .DEFINE VDP_WRITE_VRAM      $40
 .DEFINE VDP_WRITE_REG       $80
 .DEFINE TILEMAP_SIZE        $0700
@@ -77,9 +70,6 @@ BANKS 17
 ;registers:
 .DEFINE Port_VDPData        $be
 .DEFINE Port_VDPAddress     $bf
-.DEFINE Port_PSG            $7f
-.DEFINE Port_FMAddress      $f0
-.DEFINE Port_FMData         $f1
 
 ;===========================================================
 
@@ -127,7 +117,7 @@ _STAGE_SELECT_HACK_BETWEEN_STAGES:
 ;moved original code here (causes a 45 frames delay before loading next stage):
     ld hl, $002d ;45 frames
 -:
-    rst $18 ;wait for VBLANK
+    rst _WAIT_FOR_IRQ
     dec hl
     ld a, l
     or h
@@ -173,10 +163,10 @@ _STAGE_SELECT_HACK:
     ld hl, _TABLE_STAGE_SELECT
     ld b, TABLE_LENGTH
     call _PRINT_STR_FROM_TBL
-    call _LABEL_614_
+    call _FADE_IN
     call _SET_PALETTE
     xor a
-    ld (_RAM_C010_), a
+    ld (_RAM_INTERRUPT_MODE), a
 -:  
     rst _WAIT_FOR_IRQ   
     call _DRAW_POINTER
@@ -325,4 +315,3 @@ _DRAW_POINTER:
     ret m
     add hl, de
     jr -
-    ret     ;never reached?
